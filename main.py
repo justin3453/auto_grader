@@ -1,5 +1,6 @@
 from students import Student
-from openpyxl import Workbook, load_workbook
+from openpyxl import load_workbook
+from openpyxl.utils import get_column_letter
 import subprocess
 import os
 
@@ -17,7 +18,7 @@ def get_input_output(file):
 
 programs = int(input("Enter number of assignments to grade:"))
 
-# Load excel file where course roster and students' assignments are stored
+# Load Excel file where course roster and students' assignments are stored
 wb = load_workbook("Final_Project_Roster.xlsx")
 ws = wb.active
 
@@ -27,27 +28,35 @@ students = {}
 # Input and output will be stored in a dictionary
 io = get_input_output("io.txt")
 
-# Creates Student objects using data from each row of the excel file
+# Creates Student objects using data from each row of the Excel file
 for row in ws.values:
-    first, last, id, folder = row
+    first, last, id, folder, *data = row
     student = Student(first, last, id, folder)
     # Keeps header names out of the student dictionary
     if type(student.id) == int:
         students[student.id] = student
 
+# Iterates over student dictionary
 for s in students:
-    assignments = os.listdir(students[s].scripts)
-    path = os.path.abspath(students[s].scripts)
+    assignments = os.listdir(students[s].scripts)  # List of programs
+    path = os.path.abspath(students[s].scripts)  # File path for folder
+    # Executes each one of the students' scripts
     for script in assignments:
         ip, op = io[script]
-        result = subprocess.check_output(f'python {path}\\{script} {ip}')
-        result = result.decode("UTF-8").strip().strip()
-        print(result)
-        print(op)
+        result = subprocess.check_output(f'python {path}\\{script} {ip}')  # Runs command in the terminal
+        result = result.decode("UTF-8").strip().strip()  # Formats the script's output
+        # If the output matches the desired result, points are added to grade
         if result == op:
             students[s].add_points(int(100 / programs))
 
+# Adds new column that contains all grades to spreadsheet
+i = 2
+ws["E1"] = "Grades"
+for s in students:
+    ws["E" + str(i)] = students[s].grade
+    i += 1
 
-print(students[11007])
+# Save the Excel file
+wb.save("Final_Project_Roster.xlsx")
 
 

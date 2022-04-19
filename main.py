@@ -1,10 +1,4 @@
-import sys
+import os
 
-
-def greeting(name):
-    return f"Hello my name is {name}."
-
-
-name = sys.argv[1]
-print(greeting(name))
+os.system('"python C:\\Users\\Justi\\PycharmProjects\\EECE2140_Final\\script.py Justin"')
 

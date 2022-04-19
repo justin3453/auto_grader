@@ -5,13 +5,17 @@ import os
 
 
 # Reads txt file where pre-defined input and expected output is stored
+# Creates a dictionary for the values
 def get_input_output(file):
+    d = {}
     with open(file, "r") as f:
         for line in f.readlines():
             f, ip, op = line.split("|")
-            inputs.append(ip)
-            output.append(op)
+            d[f] = (ip, op)
+    return d
 
+
+programs = int(input("Enter number of assignments to grade:"))
 
 # Load excel file where course roster and students' assignments are stored
 wb = load_workbook("Final_Project_Roster.xlsx")
@@ -19,6 +23,9 @@ ws = wb.active
 
 # Student objects created will be stored in a dictionary
 students = {}
+
+# Input and output will be stored in a dictionary
+io = get_input_output("io.txt")
 
 # Creates Student objects using data from each row of the excel file
 for row in ws.values:
@@ -28,25 +35,19 @@ for row in ws.values:
     if type(student.id) == int:
         students[student.id] = student
 
+for s in students:
+    assignments = os.listdir(students[s].scripts)
+    path = os.path.abspath(students[s].scripts)
+    for script in assignments:
+        ip, op = io[script]
+        result = subprocess.check_output(f'python {path}\\{script} {ip}')
+        result = result.decode("UTF-8").strip().strip()
+        print(result)
+        print(op)
+        if result == op:
+            students[s].add_points(int(100 / programs))
 
-
-
-inputs = []
-output = []
-get_input_output("io.txt")
-ip1 = inputs[0]
-op1 = output[0]
-
-programs = int(input("Enter number of assignments to grade:"))
-
-for id, student in students.items():
-    result = subprocess.check_output(f'python {student.scripts} {ip1}')
-    result = result.decode("UTF-8").strip().strip()
-
-    print(result)
-    print(op1)
-    if result == op1:
-        student.add_points(100/programs)
 
 print(students[11007])
+
 

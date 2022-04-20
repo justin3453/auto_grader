@@ -1,6 +1,5 @@
 from students import Student
 from openpyxl import load_workbook
-from openpyxl.utils import get_column_letter
 import subprocess
 import os
 
@@ -11,8 +10,8 @@ def get_input_output(file):
     d = {}
     with open(file, "r") as f:
         for line in f.readlines():
-            f, ip, op = line.split("|")
-            d[f] = (ip, op)
+            script, ip, op = line.split("|")
+            d[script] = (ip, op)
     return d
 
 
@@ -31,23 +30,30 @@ io = get_input_output("io.txt")
 # Creates Student objects using data from each row of the Excel file
 for row in ws.values:
     first, last, id, folder, *data = row
-    student = Student(first, last, id, folder)
+    student = Student(first.strip(), last.strip(), id, folder)
     # Keeps header names out of the student dictionary
     if type(student.id) == int:
         students[student.id] = student
 
-# Iterates over student dictionary
-for s in students:
-    assignments = os.listdir(students[s].scripts)  # List of programs
-    path = os.path.abspath(students[s].scripts)  # File path for folder
-    # Executes each one of the students' scripts
-    for script in assignments:
-        ip, op = io[script]
-        result = subprocess.check_output(f'python {path}\\{script} {ip}')  # Runs command in the terminal
-        result = result.decode("UTF-8").strip().strip()  # Formats the script's output
-        # If the output matches the desired result, points are added to grade
-        if result == op:
-            students[s].add_points(int(100 / programs))
+
+with open("output.txt", 'w') as f_out:
+    # Iterates over student dictionary
+    for s in students:
+        assignments = os.listdir(students[s].scripts)  # List of programs
+        path = os.path.abspath(students[s].scripts)  # File path for folder
+        f_out.write(f'{students[s].first} {students[s].last}:\n')
+        # Executes each one of the students' scripts
+        for script in assignments:
+            ip, op = io[script]
+            result = subprocess.check_output(f'python {path}\\{script} {ip}')  # Runs command in the terminal
+            result = result.decode("UTF-8").strip()  # Formats the script's output
+            f_out.write(f'{script}: {ip} >>> {result}\n')
+
+            # If the output matches the desired result, points are added to grade
+            if result in op:
+                students[s].add_points(round(100 / programs))
+            f_out.write(f"{students[s].grade}\n")
+        f_out.write("\n")
 
 # Adds new column that contains all grades to spreadsheet
 i = 2

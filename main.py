@@ -7,47 +7,59 @@ import os
 # Reads txt file where pre-defined input and expected output is stored
 # Creates a dictionary for the values
 def get_input_output(file):
+    # Stores input/output pairs for each assignment
     data = {}
+
+    # The weight of each assignment is calculated dynamically
     try:
         with open(file, "r") as f:
-            tests = 0
+            tests = 0  # Number of total pairs in dictionary, determines weight
             for line in f.readlines():
                 script, ip, op = line.split("|")
+
+                # Adds to the list of pairs if the script already exists in the dictionary
+                # Allows for one file to be tested against multiple sets of input
                 if script in data:
                     data[script] = data[script] + [(ip, op)]
                 else:
                     data[script] = [(ip, op)]
+
                 tests += 1
         return data, tests
+
     # Informs the user if their data file cannot be found
     except FileNotFoundError:
         print("I/O file does not exist.")
         exit(1)
 
 
-# User must enter the complete file path
+# Enter complete file path if necessary
 spreadsheet = input("Enter Excel file:")
+
+# Prevents user from entering incorrect file extension
+if not spreadsheet.endswith('.xlsx'):
+    print('You must enter the correct file extension, [.xlsx].')
+    exit(1)
+
+# Enter complete file path if necessary
 io_file = input("Enter text file with i/o data:")
+io, programs = get_input_output(io_file)
 
 # Load Excel file where course roster and students' assignments are stored
 try:
-    # Ends program is the Excel is already open
+    # Ends program if the Excel is already open
     if os.path.isfile('~$' + spreadsheet):
         print("You must close the excel file.")
         exit(1)
+
     wb = load_workbook(spreadsheet)
     ws = wb.active
 except FileNotFoundError:
-    print("File does not exist.")
+    print("Excel file does not exist.")
     exit(1)
-
 
 # Student objects created will be stored in a dictionary
 students = {}
-
-# Input and output will be stored in a dictionary
-# The weight of each assignment is calculated dynamically
-io, programs = get_input_output(io_file)
 
 # Creates Student objects using data from each row of the Excel file
 for row in ws.values:
@@ -76,7 +88,7 @@ with open("output.txt", 'w') as f_out:
                 result = subprocess.run(f"python {path}\\{script} {ip}", capture_output=True, shell=True, text=True)
                 f_out.write(f'{script}: {ip} >>> {result.stdout}')
 
-                # If the output matches the desired result, points are added to grade
+                # If the output matches the desired result, increment counter
                 if op.strip() == result.stdout.strip():
                     correct += 1
                     f_out.write('Passed\n')
@@ -86,6 +98,7 @@ with open("output.txt", 'w') as f_out:
                 else:
                     f_out.write('Incorrect output\n')
 
+        # Updates grade
         student.add_points(round(100 * correct / programs))
         f_out.write("\n")
 

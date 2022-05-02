@@ -1,4 +1,6 @@
 class Student:
+    """Student class for storing a student's info"""
+    
     def __init__(self, first, last, id, scripts=""):
         """Initializes Student object"""
         self.first = first

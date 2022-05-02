@@ -7,15 +7,18 @@ import os
 # Reads txt file where pre-defined input and expected output is stored
 # Creates a dictionary for the values
 def get_input_output(file):
-    d = {}
+    data = {}
     try:
         with open(file, "r") as f:
             tests = 0
             for line in f.readlines():
                 script, ip, op = line.split("|")
-                d[script] = (ip, op)
+                if script in data:
+                    data[script] = data[script] + [(ip, op)]
+                else:
+                    data[script] = [(ip, op)]
                 tests += 1
-        return d, tests
+        return data, tests
     # Informs the user if their data file cannot be found
     except FileNotFoundError:
         print("I/O file does not exist.")
@@ -64,23 +67,24 @@ with open("output.txt", 'w') as f_out:
         # Executes each one of the students' scripts
         correct = 0  # Counter for correctly made programs
         for script in assignments:
-            # Name of each script must match the name written in the i/o txt file
-            # Student will not receive credit if the file is named incorrectly
-            ip, op = io[script]
+            for test in io[script]:
+                # Name of each script must match the name written in the i/o txt file
+                # Student will not receive credit if the file is named incorrectly
+                ip, op = test
 
-            # Runs command in the terminal
-            result = subprocess.run(f"python {path}\\{script} {ip}", capture_output=True, shell=True, text=True)
-            f_out.write(f'{script}: {ip} >>> {result.stdout}')
+                # Runs command in the terminal
+                result = subprocess.run(f"python {path}\\{script} {ip}", capture_output=True, shell=True, text=True)
+                f_out.write(f'{script}: {ip} >>> {result.stdout}')
 
-            # If the output matches the desired result, points are added to grade
-            if op.strip() == result.stdout.strip():
-                correct += 1
-                f_out.write('Passed\n')
-            # If an error occurred in the program, it will appear in the output file
-            elif result.returncode != 0:
-                f_out.write(f'\nError: {result.stderr}\n')
-            else:
-                f_out.write('Incorrect output\n')
+                # If the output matches the desired result, points are added to grade
+                if op.strip() == result.stdout.strip():
+                    correct += 1
+                    f_out.write('Passed\n')
+                # If an error occurred in the program, it will appear in the output file
+                elif result.returncode != 0:
+                    f_out.write(f'\nError: {result.stderr}\n')
+                else:
+                    f_out.write('Incorrect output\n')
 
         student.add_points(round(100 * correct / programs))
         f_out.write("\n")

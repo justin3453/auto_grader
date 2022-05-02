@@ -16,5 +16,3 @@ class Student:
         return f"Name: {self.first} {self.last}\n" \
                f"Student ID: {self.id}\n" \
                f"Grade: {self.grade}\n\n"
-    
-    
